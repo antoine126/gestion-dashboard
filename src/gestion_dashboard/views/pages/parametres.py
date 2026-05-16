@@ -35,8 +35,8 @@ def show() -> None:
     params = db.get_parametres()
 
     # ── Tabs ───────────────────────────────────────────────────────────────
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["💰 Salaire & 50/30/20", "🔒 Charges fixes", "🌱 Épargne", "🏷️ Catégories", "🎯 Projets"]
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        ["💰 Salaire & 50/30/20", "🔒 Charges fixes", "🌱 Épargne", "🏷️ Catégories", "🎯 Projets", "📋 Budgets par défaut"]
     )
 
     # ══ Tab 1 — Salaire & 50/30/20 ═════════════════════════════════════════
@@ -382,3 +382,52 @@ def show() -> None:
                             st.rerun()
         else:
             st.info("Aucun projet. Créez-en un ci-dessus.")
+
+    # ══ Tab 6 — Budgets par défaut ══════════════════════════════════════════
+    with tab6:
+        st.markdown('<div class="section-header">Budgets mensuels par défaut</div>', unsafe_allow_html=True)
+        st.caption(
+            "Ces montants sont pré-remplis dans la Vue Mensuelle quand aucun budget "
+            "spécifique n'a encore été défini pour un mois donné. Vous pouvez les "
+            "modifier mois par mois directement depuis la Vue Mensuelle."
+        )
+
+        categories = db.get_categories()
+        if not categories:
+            st.info("Aucune catégorie configurée. Ajoutez-en dans l'onglet Catégories.")
+        else:
+            defauts = db.get_budgets_defaut()
+            st.markdown("")
+
+            col_labels, col_inputs = st.columns([2, 2])
+            with col_labels:
+                st.markdown("**Catégorie**")
+            with col_inputs:
+                st.markdown("**Budget mensuel par défaut (€)**")
+
+            new_defauts: dict[int, float] = {}
+            for cat in categories:
+                c1, c2 = st.columns([2, 2])
+                with c1:
+                    st.markdown(
+                        f"<div style='margin-top:8px'>{cat.icone} {cat.nom}</div>",
+                        unsafe_allow_html=True,
+                    )
+                with c2:
+                    new_defauts[cat.id] = st.number_input(
+                        f"Défaut {cat.nom}",
+                        min_value=0.0,
+                        value=defauts.get(cat.id, 0.0),
+                        step=10.0,
+                        label_visibility="collapsed",
+                        key=f"defaut_{cat.id}",
+                    )
+
+            st.markdown("")
+            total_defaut = sum(new_defauts.values())
+            st.caption(f"Total mensuel par défaut : **{total_defaut:,.0f} €**")
+
+            if st.button("💾 Enregistrer les budgets par défaut", type="primary"):
+                db.save_budgets_defaut(new_defauts)
+                st.success("✓ Budgets par défaut enregistrés.")
+                st.rerun()

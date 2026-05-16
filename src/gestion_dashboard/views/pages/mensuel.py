@@ -25,7 +25,7 @@ def _current_month_year() -> tuple[int, int]:
     )
 
 
-def _calcul_solde_reporte(mois: int, annee: int, params, charges, produits) -> float:
+def _calcul_solde_reporte(mois: int, annee: int, params, charges, produits, budgets_defaut: dict | None = None) -> float:
     """Return the running balance carried into *mois* from all prior months.
 
     Positive  → surplus reporté  (green card).
@@ -41,9 +41,21 @@ def _calcul_solde_reporte(mois: int, annee: int, params, charges, produits) -> f
     neither build up a phantom surplus nor cancel a deficit.
     """
     cumul = 0.0
+    _defauts = budgets_defaut or {}
+    _all_cats = db.get_categories() if _defauts else []
     previsionnel_annee = db.get_previsionnel(annee)   # load once for the year
     for m in range(1, mois):
         bv = db.get_budgets_variables(m, annee)
+        # Apply default budgets for categories not specifically set that month
+        if _defauts:
+            _bv_set = {b.categorie_id for b in bv}
+            for _cat in _all_cats:
+                if _cat.id not in _bv_set and _defauts.get(_cat.id, 0.0) > 0:
+                    bv.append(BudgetVariable(
+                        id=0, mois=m, annee=annee,
+                        categorie_id=_cat.id,
+                        montant_budgete=_defauts[_cat.id],
+                    ))
         dep = db.get_depenses(m, annee)
         exc = db.get_revenus_exceptionnels(m, annee)
         ee = db.get_epargne_exceptionnelles(m, annee)
@@ -120,6 +132,16 @@ def show() -> None:
     produits = db.get_produits_epargne()
     categories = db.get_categories()
     bv_list = db.get_budgets_variables(mois, annee)
+    budgets_defaut = db.get_budgets_defaut()
+    # Augment bv_list with default budgets for categories not yet set this month
+    _bv_set = {bv.categorie_id for bv in bv_list}
+    for _cat in categories:
+        if _cat.id not in _bv_set and budgets_defaut.get(_cat.id, 0.0) > 0:
+            bv_list.append(BudgetVariable(
+                id=0, mois=mois, annee=annee,
+                categorie_id=_cat.id,
+                montant_budgete=budgets_defaut[_cat.id],
+            ))
     dep_list = db.get_depenses(mois, annee)
     exc_list = db.get_revenus_exceptionnels(mois, annee)
     ee_list = db.get_epargne_exceptionnelles(mois, annee)
@@ -127,7 +149,7 @@ def show() -> None:
     prev_list = [p for p in db.get_previsionnel(annee) if p.mois_prevu == mois]
     total_exc = sum(r.montant for r in exc_list)
 
-    solde_reporte = _calcul_solde_reporte(mois, annee, params, charges, produits)
+    solde_reporte = _calcul_solde_reporte(mois, annee, params, charges, produits, budgets_defaut)
 
     solde = calculs.calcul_solde_mensuel(
         salaire=params.salaire_net,

@@ -592,12 +592,30 @@ def delete_allocation_projet(aid: int) -> None:
             _save_df("projets", proj_df)
 
 
+# ─── Budgets par défaut par catégorie ────────────────────────────────────────
+
+_BDC_SCHEMA = {"categorie_id": [], "montant_defaut": []}
+
+
+def get_budgets_defaut() -> dict[int, float]:
+    """Return a mapping {categorie_id: montant_defaut} for all categories."""
+    df = _load_df("budgets_defaut_categorie", _BDC_SCHEMA)
+    return {int(r["categorie_id"]): float(r["montant_defaut"]) for r in df.to_dict("records")}
+
+
+def save_budgets_defaut(defauts: dict[int, float]) -> None:
+    """Replace the entire default-budget table with the given mapping."""
+    rows = [{"categorie_id": cid, "montant_defaut": mt} for cid, mt in defauts.items()]
+    df = pd.DataFrame(rows) if rows else pd.DataFrame(_BDC_SCHEMA)
+    _save_df("budgets_defaut_categorie", df)
+
+
 # ─── Import / Export JSON ─────────────────────────────────────────────────────
 
 _ALL_TABLES = [
     "parametres", "charges_fixes", "epargne", "categories",
-    "budgets_variables", "journal_depenses", "revenus_exceptionnels",
-    "previsionnel", "biens_immobiliers",
+    "budgets_variables", "budgets_defaut_categorie", "journal_depenses",
+    "revenus_exceptionnels", "previsionnel", "biens_immobiliers",
     "epargne_exceptionnelle", "projets", "allocations_projet",
 ]
 
