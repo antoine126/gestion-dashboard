@@ -1,16 +1,23 @@
 """Parquet-based CRUD operations for the budget application.
 
-Each entity type maps to a dedicated ``<name>.parquet`` file in
-``src/gestion_dashboard/data/``.  Files are created on first access
-with the correct schema and, where applicable, pre-populated with
-sensible default values.
+Each entity type maps to a dedicated ``<name>.parquet`` file in a
+user-specific sub-directory ``data/user_<id>/``.  Files are created on
+first access with the correct schema and, where applicable, pre-populated
+with sensible default values.
+
+Multi-user isolation uses ``threading.local`` so that each Streamlit
+session (one OS thread) has its own active data directory without
+interfering with other concurrent sessions.  Call ``set_user_data_dir``
+once per session at login; it must be re-called at the beginning of each
+Streamlit rerun to ensure the thread-local value is current.
 """
 from __future__ import annotations
 
 import datetime
 import json
 import os
-from typing import List
+import threading
+from typing import List, Optional
 
 import pandas as pd
 
@@ -30,19 +37,44 @@ from gestion_dashboard.models.budget import (
 )
 from gestion_dashboard.models.enums import CATEGORIES_DEFAULT, PRODUITS_EPARGNE_DEFAULT
 
-# Data directory lives alongside the package source
+# Base data directory (shared root; user subdirs live inside)
 _PKG_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(_PKG_ROOT, "data")
+
+# Thread-local storage: each Streamlit session thread gets its own active dir
+_tl = threading.local()
+
+
+def set_user_data_dir(user_id: Optional[int]) -> None:
+    """Point all DB operations for the current thread to *user_id*'s directory.
+
+    Call this once after a user logs in and again at the top of every
+    Streamlit rerun (``main()``), because Streamlit may assign the session
+    to a different thread between reruns.
+
+    Pass ``None`` to reset to the legacy shared directory (no-auth mode).
+    """
+    if user_id is None:
+        _tl.data_dir = DATA_DIR
+    else:
+        d = os.path.join(DATA_DIR, f"user_{user_id}")
+        os.makedirs(d, exist_ok=True)
+        _tl.data_dir = d
+
+
+def _active_dir() -> str:
+    """Return the data directory for the current thread (session)."""
+    return getattr(_tl, "data_dir", DATA_DIR)
 
 
 # ─── Internal helpers ─────────────────────────────────────────────────────────
 
 def _ensure_data_dir() -> None:
-    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(_active_dir(), exist_ok=True)
 
 
 def _path(name: str) -> str:
-    return os.path.join(DATA_DIR, f"{name}.parquet")
+    return os.path.join(_active_dir(), f"{name}.parquet")
 
 
 def _load_df(name: str, empty_schema: dict) -> pd.DataFrame:

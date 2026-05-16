@@ -14,6 +14,18 @@ from pydantic import BaseModel, Field
 
 # ─── Pydantic models (persistence) ───────────────────────────────────────────
 
+class User(BaseModel):
+    """Application user account."""
+
+    id: int = 0
+    username: str = ""
+    display_name: str = ""
+    password_hash: str = ""
+    created_at: str = Field(default_factory=lambda: datetime.datetime.now().isoformat())
+    last_login: str = ""
+    is_active: bool = True
+
+
 class Parametres(BaseModel):
     """Global user configuration."""
 
