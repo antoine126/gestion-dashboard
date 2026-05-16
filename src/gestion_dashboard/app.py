@@ -29,6 +29,7 @@ from gestion_dashboard.views.pages import (  # noqa: E402
     mensuel,
     parametres,
     previsionnel,
+    rapport_pdf,
 )
 
 
@@ -87,8 +88,11 @@ def main() -> None:
                 st.Page(immobilier.show,   title="Immobilier",     icon="🏘️",  url_path="immobilier"),
             ],
             "📋 Planification": [
-                st.Page(previsionnel.show, title="Prévisionnel",   icon="📦",  url_path="previsionnel"),
-                st.Page(analyses.show,     title="Analyses",       icon="📈",  url_path="analyses"),
+                st.Page(previsionnel.show,  title="Prévisionnel",   icon="📦",  url_path="previsionnel"),
+                st.Page(analyses.show,      title="Analyses",       icon="📈",  url_path="analyses"),
+            ],
+            "📤 Export": [
+                st.Page(rapport_pdf.show,   title="Rapport PDF",    icon="📄",  url_path="rapport-pdf"),
             ],
         },
         position="sidebar"

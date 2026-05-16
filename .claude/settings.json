@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv add *)",
+      "Bash(uv run python -c ' *)",
+      "Bash(brew list *)",
+      "Bash(brew --prefix pango)",
+      "Read(//usr/local/opt/pango/**)",
+      "Read(//usr/local/lib/**)",
+      "Read(//usr/local/**)",
+      "Bash(brew reinstall *)",
+      "Bash(brew install *)",
+      "Bash(find /usr/local /opt/homebrew /usr -name \"libgobject*\" 2>/dev/null | head -10)",
+      "Read(//opt/**)",
+      "Bash(rm -f ~/Library/Caches/Homebrew/downloads/*.incomplete 2>/dev/null; brew install glib pango 2>&1 | tail -15)",
+      "Read(//Users/antoinepagneux/**)",
+      "Read(//private/tmp/**)",
+      "Bash(HOMEBREW_NO_AUTO_UPDATE=1 brew install glib)",
+      "Bash(brew --prefix)",
+      "Bash(ls \"$\\(brew --prefix\\)/var/homebrew/locks/\")",
+      "Bash(rm /usr/local/var/homebrew/locks/glib.formula.lock /usr/local/var/homebrew/locks/pango.formula.lock /usr/local/var/homebrew/locks/gettext.formula.lock /usr/local/var/homebrew/locks/gobject-introspection.formula.lock 2>/dev/null; echo \"Locks cleared\")",
+      "Bash(HOMEBREW_NO_AUTO_UPDATE=1 brew install glib pango)",
+      "Bash(rm -f /usr/local/var/homebrew/locks/*.lock 2>/dev/null; echo \"All locks cleared\")",
+      "Bash(HOMEBREW_NO_AUTO_UPDATE=1 brew fetch --bottle glib)",
+      "Bash(HOMEBREW_NO_AUTO_UPDATE=1 brew install --debug glib)",
+      "Bash(ls /System/Library/Fonts/ | head -20; ls /Library/Fonts/ 2>/dev/null | head -10)",
+      "Read(//System/Library/Fonts/**)",
+      "Read(//Library/Fonts/**)",
+      "Bash(uv remove *)",
+      "Bash(open /tmp/test_rapport.pdf)"
+    ],
+    "additionalDirectories": [
+      "/Users/antoinepagneux/Library/Caches/Homebrew/downloads",
+      "/usr/local/var/homebrew/locks"
+    ]
+  }
+}
